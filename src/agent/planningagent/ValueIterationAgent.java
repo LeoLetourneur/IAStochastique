@@ -2,13 +2,12 @@ package agent.planningagent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import environnement.Action;
 import environnement.Etat;
 import environnement.MDP;
-import environnement.gridworld.ActionGridworld;
+import util.HashMapUtil;
 
 
 /**
@@ -22,9 +21,9 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	 * discount facteur
 	 */
 	protected double gamma;
+	protected double gammaInit;
 	//*** VOTRE CODE
-
-
+	protected HashMapUtil Values;
 	
 	/**
 	 * 
@@ -33,16 +32,14 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	 */
 	public ValueIterationAgent(double gamma,MDP mdp) {
 		super(mdp);
-		this.gamma = gamma;
+		this.gammaInit = gamma;
 		//*** VOTRE CODE
-	
+		this.reset();
 	
 	}
 	
-	
 	public ValueIterationAgent(MDP mdp) {
 		this(0.9,mdp);
-
 	}
 	
 	/**
@@ -56,14 +53,55 @@ public class ValueIterationAgent extends PlanningValueAgent{
 		//delta < epsilon 
 		this.delta=0.0;
 		//*** VOTRE CODE
-		
+		//Copie de l'ancienne Hashmap pour modifier la nouvelle directement
+		HashMapUtil duplicateValues = (HashMapUtil)Values.clone();
+        for (Etat etat : mdp.getEtatsAccessibles()) {
+            double maxValue = -Double.MAX_VALUE;
+            for (Action action : mdp.getActionsPossibles(etat)) {
+                double somme = 0;
+                double recompense = 0;
+                double transition = 0;
+                double precedente = 0;
+                try {
+                	//Pour un état et une action, on récupère la liste des transitions
+                	HashMapUtil map = (HashMapUtil) mdp.getEtatTransitionProba(etat, action);
+                    for (Etat etatMap : map.keySet()) {
+                    	//On calcul la somme à maximiser
+                    	transition = map.get(etatMap);
+                    	recompense = mdp.getRecompense(etat, action, etatMap);
+                    	precedente = gamma * duplicateValues.get(etatMap);
+                        somme += transition * (recompense + precedente);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                //Récupération de la valeur max des actions
+                maxValue = Math.max(maxValue, somme);
+            }
+            //Mise à jour de Vk(S) en fonction des valeurs à k-1
+            this.Values.put(etat, maxValue);
+        }
 	
-		
-		
-		// mise a jour vmax et vmin pour affichage du gradient de couleur:
-		//vmax est la valeur de max pour tout s de V
-		//vmin est la valeur de min pour tout s de V
-		// ...
+        //Maximisation de l'erreur
+        double max_erreur = 0;
+        double ancienne = 0;
+        double nouvelle = 0;
+        for (Etat etat : this.Values.keySet()) {
+        	ancienne = duplicateValues.get(etat);
+        	nouvelle = this.Values.get(etat);
+            max_erreur = Math.max(max_erreur, Math.abs(ancienne - nouvelle));
+        }
+        this.delta = max_erreur;
+        
+        //Mise à jour de vmax et vmin pour affichage du gradient de couleur
+        //vmax est la valeur max pour tout s de V
+      	//vmin est la valeur min pour tout s de V
+        this.vmax = 0;
+        this.vmin = Integer.MAX_VALUE;
+        for (double value : this.Values.values()) {
+        	vmax = Math.max(value, vmax);
+        	vmin = Math.min(value, vmin);
+        }
 		
 		//******************* a laisser a la fin de la methode
 		this.notifyObs();
@@ -76,15 +114,25 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	@Override
 	public Action getAction(Etat e) {
 		//*** VOTRE CODE
-		
-	
-		return null;
+		List<Action> actions = getPolitique(e);
+        if (actions.size() == 0) {
+        	System.out.println("Null");
+            return null;
+        } else if(actions.size() == 1){
+        	System.out.println("Fixe "+actions.get(0));
+            return actions.get(0);
+        } else {
+            int i = new Random().nextInt(actions.size());
+            Action action = actions.get(i);
+            System.out.println("Rand "+action);
+            return action;
+        }
 	}
+	
 	@Override
 	public double getValeur(Etat _e) {
 		//*** VOTRE CODE
-		
-		return 0.0;
+        return this.Values.get(_e);
 	}
 	/**
 	 * renvoi la (les) action(s) de plus forte(s) valeur(s) dans l'etat e 
@@ -92,33 +140,58 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	 */
 	@Override
 	public List<Action> getPolitique(Etat _e) {
-		List<Action> l = new ArrayList<Action>();
+		List<Action> actions = new ArrayList<Action>();
 		//*** VOTRE CODE
 		
-		
-		return l;
-		
+        double v_max = -Double.MAX_VALUE;
+        for(Action action : mdp.getActionsPossibles(_e)) {
+            try {
+            	HashMapUtil map = (HashMapUtil)mdp.getEtatTransitionProba(_e, action);
+                double somme = 0;
+                double recompense = 0;
+                double transition = 0;
+                double precedente = 0;
+                
+                //Calcul de la somme pour chaque état
+                for(Etat etat_suivant : map.keySet()) {
+                	transition = map.get(etat_suivant);
+                	recompense = mdp.getRecompense(_e, action, etat_suivant);
+                	precedente = gamma * getValeur(etat_suivant);
+                    somme += transition * (recompense + precedente);
+                }
+                
+                //Si la somme est supérieur, on vide la liste et on ajoute l'action
+                if(somme > v_max) {
+                	actions.clear();
+                	actions.add(action);
+                    v_max = somme;
+                } //Si égale, on ajoute l'action
+                else if(somme == v_max) {
+                	actions.add(action);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return actions;
 	}
 	
 	@Override
 	public void reset() {
 		super.reset();
 		//*** VOTRE CODE
-		
-		
-		
-		
-		
+		this.gamma = this.gammaInit;
+        this.Values = new HashMapUtil();
+        for (Etat e : mdp.getEtatsAccessibles()) {
+            this.Values.put(e, 0.0);
+        }
+        
 		/*-----------------*/
 		this.notifyObs();
-
 	}
-
 
 	@Override
-	public void setGamma(double arg0) {
-		this.gamma = arg0;
+	public void setGamma(double gamma) {
+		this.gamma = gamma;
 	}
-
-	
 }
