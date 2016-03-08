@@ -17,12 +17,10 @@ import util.HashMapUtil;
  *
  */
 public class ValueIterationAgent extends PlanningValueAgent{
-	/**
-	 * discount facteur
-	 */
+	
+	protected final boolean TEST = true;
 	protected double gamma;
 	protected double gammaInit;
-	//*** VOTRE CODE
 	protected HashMapUtil Values;
 	
 	/**
@@ -53,10 +51,14 @@ public class ValueIterationAgent extends PlanningValueAgent{
 		//delta < epsilon 
 		this.delta=0.0;
 		//*** VOTRE CODE
+		
+		if(this.TEST)
+			System.out.println("Calcul de V(s)");
+		
 		//Copie de l'ancienne Hashmap pour modifier la nouvelle directement
 		HashMapUtil duplicateValues = (HashMapUtil)Values.clone();
         for (Etat etat : mdp.getEtatsAccessibles()) {
-            double maxValue = -Double.MAX_VALUE;
+            double maxValue = 0;// -Double.MAX_VALUE;
             for (Action action : mdp.getActionsPossibles(etat)) {
                 double somme = 0;
                 double recompense = 0;
@@ -80,8 +82,11 @@ public class ValueIterationAgent extends PlanningValueAgent{
             }
             //Mise à jour de Vk(S) en fonction des valeurs à k-1
             this.Values.put(etat, maxValue);
+            
+            if(this.TEST)
+            	System.out.println("Etat : "+etat+" -> max : "+maxValue);
         }
-	
+        
         //Maximisation de l'erreur
         double max_erreur = 0;
         double ancienne = 0;
@@ -114,19 +119,26 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	@Override
 	public Action getAction(Etat e) {
 		//*** VOTRE CODE
+		
+		if(this.TEST)
+			System.out.println("---------------------------------------------------");
+		
+		//Mise à jour des valeurs
+		updateV();
+		
+		Action action = null;
 		List<Action> actions = getPolitique(e);
-        if (actions.size() == 0) {
-        	System.out.println("Null");
-            return null;
-        } else if(actions.size() == 1){
-        	System.out.println("Fixe "+actions.get(0));
-            return actions.get(0);
-        } else {
+		if(actions.size() == 1){
+        	action = actions.get(0);
+        } else if (actions.size() > 1) {
             int i = new Random().nextInt(actions.size());
-            Action action = actions.get(i);
-            System.out.println("Rand "+action);
-            return action;
+            action = actions.get(i);
         }
+		
+		if(this.TEST)
+			System.out.println("Direction choisie : "+action+"\n");
+		
+		return action;
 	}
 	
 	@Override
@@ -143,14 +155,18 @@ public class ValueIterationAgent extends PlanningValueAgent{
 		List<Action> actions = new ArrayList<Action>();
 		//*** VOTRE CODE
 		
-        double v_max = -Double.MAX_VALUE;
+        double v_max = -Integer.MAX_VALUE;
+        
+        if(this.TEST)
+        	System.out.println("\nPour l'état : "+_e);
+        
         for(Action action : mdp.getActionsPossibles(_e)) {
             try {
             	HashMapUtil map = (HashMapUtil)mdp.getEtatTransitionProba(_e, action);
-                double somme = 0;
-                double recompense = 0;
-                double transition = 0;
-                double precedente = 0;
+                double somme = 0.0;
+                double recompense = 0.0;
+                double transition = 0.0;
+                double precedente = 0.0;
                 
                 //Calcul de la somme pour chaque état
                 for(Etat etat_suivant : map.keySet()) {
@@ -169,10 +185,16 @@ public class ValueIterationAgent extends PlanningValueAgent{
                 else if(somme == v_max) {
                 	actions.add(action);
                 }
+                
+                if(this.TEST)
+                	System.out.println("	Action : "+action.toString()+" ("+action.ordinal()+") -> somme : "+somme);
+                
+                
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+        
         return actions;
 	}
 	
