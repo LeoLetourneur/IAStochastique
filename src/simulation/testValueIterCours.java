@@ -16,7 +16,9 @@ public class testValueIterCours {
 				public void run(){
 		
 						
-					GridworldMDP gmdp = GridworldMDP.getBookGrid();
+					//GridworldMDP gmdp = GridworldMDP.getBookGrid();
+					//GridworldMDP gmdp = GridworldMDP.getBridgeGrid();
+					GridworldMDP gmdp = GridworldMDP.getDiscountGrid();
 					GridworldEnvironnement g = new GridworldEnvironnement(gmdp);
 					
 					ValueIterationAgent a = new ValueIterationAgent(gmdp);

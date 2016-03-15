@@ -20,22 +20,24 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	
 	protected final boolean TEST = true;
 	protected double gamma;
-	protected double gammaInit;
 	protected HashMapUtil Values;
 	
 	/**
-	 * 
+	 * Constructeur
 	 * @param gamma
 	 * @param mdp
 	 */
-	public ValueIterationAgent(double gamma,MDP mdp) {
+	public ValueIterationAgent(double gamma, MDP mdp) {
 		super(mdp);
-		this.gammaInit = gamma;
-		//*** VOTRE CODE
+		this.gamma = gamma;
 		this.reset();
 	
 	}
 	
+	/**
+	 * Constructeur
+	 * @param mdp
+	 */
 	public ValueIterationAgent(MDP mdp) {
 		this(0.9,mdp);
 	}
@@ -50,7 +52,6 @@ public class ValueIterationAgent extends PlanningValueAgent{
 		//lorsque l'on planifie jusqu'a convergence, on arrete les iterations lorsque
 		//delta < epsilon 
 		this.delta=0.0;
-		//*** VOTRE CODE
 		
 		if(this.TEST)
 			System.out.println("Calcul de V(s)");
@@ -87,7 +88,7 @@ public class ValueIterationAgent extends PlanningValueAgent{
             	System.out.println("Etat : "+etat+" -> max : "+maxValue);
         }
         
-        //Maximisation de l'erreur
+        //Maximisation de l'erreur pour convergeance
         double max_erreur = 0;
         double ancienne = 0;
         double nouvelle = 0;
@@ -118,13 +119,9 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	 */
 	@Override
 	public Action getAction(Etat e) {
-		//*** VOTRE CODE
 		
 		if(this.TEST)
 			System.out.println("---------------------------------------------------");
-		
-		//Mise à jour des valeurs
-		updateV();
 		
 		Action action = null;
 		List<Action> actions = getPolitique(e);
@@ -143,9 +140,9 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	
 	@Override
 	public double getValeur(Etat _e) {
-		//*** VOTRE CODE
         return this.Values.get(_e);
 	}
+	
 	/**
 	 * renvoi la (les) action(s) de plus forte(s) valeur(s) dans l'etat e 
 	 * (plusieurs actions sont renvoyees si valeurs identiques, liste vide si aucune action n'est possible)
@@ -153,7 +150,6 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	@Override
 	public List<Action> getPolitique(Etat _e) {
 		List<Action> actions = new ArrayList<Action>();
-		//*** VOTRE CODE
 		
         double v_max = -Integer.MAX_VALUE;
         
@@ -201,8 +197,7 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	@Override
 	public void reset() {
 		super.reset();
-		//*** VOTRE CODE
-		this.gamma = this.gammaInit;
+
         this.Values = new HashMapUtil();
         for (Etat e : mdp.getEtatsAccessibles()) {
             this.Values.put(e, 0.0);
