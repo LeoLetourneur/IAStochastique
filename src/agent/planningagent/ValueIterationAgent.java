@@ -18,7 +18,7 @@ import util.HashMapUtil;
  */
 public class ValueIterationAgent extends PlanningValueAgent{
 	
-	protected final boolean TEST = true;
+	protected final boolean TEST = false;
 	protected double gamma;
 	protected HashMapUtil Values;
 	
@@ -31,7 +31,6 @@ public class ValueIterationAgent extends PlanningValueAgent{
 		super(mdp);
 		this.gamma = gamma;
 		this.reset();
-	
 	}
 	
 	/**
